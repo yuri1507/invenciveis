@@ -4,10 +4,13 @@ import robocode.*;
 import java.awt.Color;
 
 // O Blindado funciona como uma torre de defesa: quase não sai do lugar
-// e concentra o dano nos tiros. Estende TeamRobot (herança).
+// e dá prioridade ao inimigo que o Guerreiro avisou.
 public class Blindado extends TeamRobot {
 
-	// Método principal: roda assim que a batalha começa
+	// Nome do inimigo que o parceiro avisou (null = ainda não recebeu aviso)
+	private String alvo = null;
+
+	// Roda assim que a batalha começa
 	public void run() {
 		// Visual do robô (tons de laranja e amarelo)
 		setBodyColor(Color.orange);
@@ -16,21 +19,28 @@ public class Blindado extends TeamRobot {
 		setScanColor(Color.orange);
 		setBulletColor(Color.yellow);
 
-		// Fica girando a arma sem parar, esperando algum inimigo cruzar o radar
+		// Fica girando a arma, esperando algum inimigo cruzar o radar
 		while (true) {
 			turnGunRight(360);
 		}
 	}
 
-	// Chamado automaticamente quando o radar encontra outro robô
+	// Chamado quando o parceiro manda uma mensagem
+	public void onMessageReceived(MessageEvent e) {
+		alvo = (String) e.getMessage(); // a mensagem é o nome do inimigo
+	}
+
+	// Chamado quando o radar encontra outro robô
 	public void onScannedRobot(ScannedRobotEvent e) {
 		// Parceiro de time não é alvo
 		if (isTeammate(e.getName())) {
 			return;
 		}
-		// Quanto mais perto o inimigo, mais forte o tiro:
-		// de perto vale a pena gastar energia, de longe o tiro forte erra mais
-		if (e.getDistance() < 300) {
+		// Se for o inimigo avisado pelo parceiro, atira com força total.
+		// Senão, a força depende da distância: de perto tiro forte, de longe fraco.
+		if (e.getName().equals(alvo)) {
+			fire(3);
+		} else if (e.getDistance() < 300) {
 			fire(3);
 		} else {
 			fire(1);
